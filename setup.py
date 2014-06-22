@@ -8,7 +8,7 @@ except ImportError:
     from distutils.core import setup
 
 
-__version__ = '0.1.2'
+__version__ = '0.1.6'
 __author__ = 'Dmitry Orlov <me@mosquito.su>'
 
 
@@ -25,7 +25,6 @@ setup(name='object_cacher',
       'Programming Language :: Python',
     ],
     long_description=open('README.rst').read(),
-    packages=[
-      '.',
-    ],
+    package_dir={'': 'src'},
+    packages=[''],
 )
