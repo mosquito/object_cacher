@@ -71,7 +71,7 @@ Installation
 
 You may install from pypi
 
-        pip install SimpleAES
+        pip install object_cacher
 
 or manual
 
