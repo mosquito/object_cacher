@@ -1,7 +1,29 @@
 Object Cacher
 =============
 
-Simple object cacher decorator. Makes cache for results of hard functions or methods.
+Simple cacher for your objects. Store copy of objects in memory (or pickle in file) and returns copy of that objects. Function arguments it is a cache key.
+
+    >>> from object_cacher import ObjectCacher
+    >>> @ObjectCacher(timeout=5)
+    ... def test(*args):
+    ...     print ('Real call')
+    ...     return args
+    ...
+    >>> test(1,2,3)
+    Real call
+    (1, 2, 3)
+
+    >>> test(1,2,3)
+    (1, 2, 3)
+
+    >>> test(1,2,3,4)
+    Real call
+    (1, 2, 3, 4)
+
+    >>> test(1,2,3,4)
+    ... (1, 2, 3, 4)
+
+Makes cache for results of hard functions or methods.
 For example you have remote RESTful api with a lot of dictionaries. You may cache it:
 
     >>> from urllib import urlopen
