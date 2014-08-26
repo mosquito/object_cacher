@@ -19,7 +19,7 @@ setup(name='object_cacher',
     license="MIT",
     description="Simple objects/methods results cacher with optional persistent cacheing.",
     platforms="all",
-    url="http://github.com/mosquito/objectcacher",
+    url="http://github.com/mosquito/object_cacher",
     classifiers=[
       'Environment :: Console',
       'Programming Language :: Python',
