@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import copy
+from functools import wraps
 import os
 import pickle
 import tempfile
@@ -53,6 +54,7 @@ class ObjectCacher(object):
         return self.copy(self.cache[key])
 
     def __call__(self, func):
+        @wraps(func)
         def wrap(*args, **kwargs):
             if self.ignore_self:
                 arg_tuple = tuple(args[1:])
@@ -66,33 +68,33 @@ class ObjectCacher(object):
 
             if key in self.cache:
                 value = self.restore(key)
-                log.debug('Returning from cache key: {0}, value: {1}'.format(key, repr(value)))
+                log.debug('[%s] Returning from cache key: %s, value: %s', self.oid, key, repr(value))
                 return value
             else:
                 data = func(*args, **kwargs)
                 self.store(key=key, value=data)
                 self.set_ts(key=key)
-                log.debug('Storing to cache key: {0}, value: {1}'.format(key, repr(data)))
+                log.debug('[%s] Storing to cache key: %s, value: %s', self.oid, key, repr(data))
                 return self.copy(data)
 
         wrap.cache_key = self.oid
         return wrap
 
     @classmethod
-    def invalidate(cls, hash_key, key=None):
-        if hash_key in cls._CACHE:
+    def invalidate(cls, oid, key=None):
+        if oid in cls._CACHE:
             if key is not None:
-                if key in cls._CACHE[hash_key] and key in cls._EXPIRATIONS[hash_key]:
-                    cls._CACHE[hash_key].pop(key)
-                    cls._EXPIRATIONS[hash_key].pop(key)
+                if key in cls._CACHE[oid] and key in cls._EXPIRATIONS[oid]:
+                    cls._CACHE[oid].pop(key)
+                    cls._EXPIRATIONS[oid].pop(key)
                     return True
                 else:
                     return False
             else:
-                for k in cls._CACHE[hash_key].keys():
-                    cls._CACHE[hash_key].pop(k)
-                for k in cls._EXPIRATIONS[hash_key].keys():
-                    cls._EXPIRATIONS[hash_key].pop(k)
+                for k in cls._CACHE[oid].keys():
+                    cls._CACHE[oid].pop(k)
+                for k in cls._EXPIRATIONS[oid].keys():
+                    cls._EXPIRATIONS[oid].pop(k)
                 return True
         else:
             raise KeyError('Hash key not registered')
@@ -136,22 +138,22 @@ class ObjectPersistentCacher(ObjectCacher):
         return time.time() > (ts + self.timeout) if ts else True
 
     @classmethod
-    def invalidate(cls, hash_key, key=None):
-        if hash_key in cls._CACHE:
-            path = os.path.join(cls.CACHE_DIR, hash_key)
+    def invalidate(cls, oid, key=None):
+        if oid in cls._CACHE:
+            path = os.path.join(cls.CACHE_DIR, oid)
             if key is not None:
                 fname = os.path.join(path, key)
-                if os.path.exists(fname) and key in cls._CACHE[hash_key]:
+                if os.path.exists(fname) and key in cls._CACHE[oid]:
                     os.remove(fname)
-                    cls._CACHE[hash_key].pop(key)
+                    cls._CACHE[oid].pop(key)
                     return True
                 else:
                     return False
             else:
-                for k in cls._CACHE[hash_key].keys():
+                for k in cls._CACHE[oid].keys():
                     fname = os.path.join(path, k)
                     os.remove(fname)
-                    cls._CACHE[hash_key].pop(k)
+                    cls._CACHE[oid].pop(k)
                 return True
         else:
             raise KeyError('Hash key not registered')
