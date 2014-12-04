@@ -8,10 +8,22 @@ import tempfile
 import time
 import uuid
 import logging
+import traceback
 
 log = logging.getLogger('objectcacher')
 
 __author__ = 'mosquito'
+
+
+class LazyString(object):
+    def __init__(self, func, *args, **kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return self.func(*self.args, **self.kwargs)
+
 
 class ObjectCacher(object):
     _CACHE = dict()
@@ -24,11 +36,15 @@ class ObjectCacher(object):
     def __init__(self, ignore_self=False, timeout=60, oid=None, **kwargs):
         if not oid:
             self.oid = str(uuid.uuid4())
-        else:
-            uoid = self.get_oid(oid)
-            if uoid in self._CACHE:
-                raise KeyError('Key must be unique but key: "{0}" already exists in cache'.format(oid))
-            self.oid = uoid
+
+        log.debug('Create cacher for key "%s" and func: %s',
+                  self.oid,
+                  LazyString(lambda: traceback.extract_stack()[-2]))
+
+        uoid = self.get_oid(oid)
+        if uoid in self._CACHE:
+            raise KeyError('Key must be unique but key: "{0}" already exists in cache'.format(oid))
+        self.oid = uoid
 
         self._CACHE[self.oid] = dict()
         self._EXPIRATIONS[self.oid] = dict()
