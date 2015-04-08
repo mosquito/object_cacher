@@ -8,16 +8,16 @@ except ImportError:
     from distutils.core import setup
 
 
-__version__ = '0.2.1'
+__version__ = '0.3.0'
 __author__ = 'Dmitry Orlov <me@mosquito.su>'
 
 
-setup(name='object_cacher',
+setup(name='object-cacher',
     version=__version__,
     author=__author__,
     author_email='me@mosquito.su',
     license="MIT",
-    description="Simple objects/methods results cacher with optional persistent cacheing.",
+    description="Simple objects/methods results cacher with optional persistent cacheing. Supports Memory Files or Redis as storage",
     platforms="all",
     url="http://github.com/mosquito/object_cacher",
     classifiers=[

@@ -3,12 +3,16 @@
 import copy
 from functools import wraps
 import os
-import pickle
 import tempfile
 import time
 import uuid
 import logging
 import traceback
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 log = logging.getLogger('objectcacher')
 
@@ -69,6 +73,9 @@ class ObjectCacher(object):
     def restore(self, key):
         return self.copy(self.cache[key])
 
+    def check_cache(self, key):
+        return key in self.cache
+
     def __call__(self, func):
         @wraps(func)
         def wrap(*args, **kwargs):
@@ -82,7 +89,7 @@ class ObjectCacher(object):
             if self.is_expired(key) and key in self.cache:
                 self.cache.pop(key)
 
-            if key in self.cache:
+            if self.check_cache(key):
                 value = self.restore(key)
                 log.debug('[%s] Returning from cache key: %s, value: %s', self.oid, key, repr(value))
                 return value
@@ -169,6 +176,46 @@ class ObjectPersistentCacher(ObjectCacher):
                 for k in cls._CACHE[oid].keys():
                     fname = os.path.join(path, k)
                     os.remove(fname)
+                    cls._CACHE[oid].pop(k)
+                return True
+        else:
+            raise KeyError('Hash key not registered')
+
+
+class ObjectRedisCacher(ObjectCacher):
+    # Set the redis connection there
+    REDIS = None
+
+    def _redis_key(self, key="*"):
+        return "{0}/{1}".format(self.oid, key)
+
+    def store(self, key, value):
+        key = self._redis_key(key)
+        self.REDIS.set(key, pickle.dumps(value))
+
+    def set_ts(self, key):
+        self.REDIS.expire(self._redis_key(key), self.timeout)
+
+    def restore(self, key):
+        return pickle.loads(self.REDIS.get(self._redis_key(key)))
+
+    def check_cache(self, key):
+        return self.REDIS.exists(self._redis_key(key))
+
+    def is_expired(self, key):
+        return self.check_cache(key)
+
+    @classmethod
+    def invalidate(cls, oid, key=None):
+        if oid in cls._CACHE:
+            if key is not None:
+                for key in cls.REDIS.keys('{0}/*'.format(oid)):
+                    cls.REDIS.delete(key)
+                    cls._CACHE[oid] = {}
+                return True
+            else:
+                for k in cls._CACHE[oid].keys():
+                    cls.REDIS.delete(key)
                     cls._CACHE[oid].pop(k)
                 return True
         else:
