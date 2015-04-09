@@ -39,11 +39,11 @@ class ObjectCacher(object):
 
     def __init__(self, ignore_self=False, timeout=60, oid=None, **kwargs):
         if not oid:
-            self.oid = str(uuid.uuid4())
+            oid = str(uuid.uuid4())
 
         log.debug('Create cacher for key "%s" and func: %s',
-                  self.oid,
-                  LazyString(lambda: traceback.extract_stack()[-2]))
+                  oid, LazyString(lambda: traceback.extract_stack()[-2])
+        )
 
         uoid = self.get_oid(oid)
         if uoid in self._CACHE:
