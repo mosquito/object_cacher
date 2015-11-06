@@ -153,7 +153,7 @@ class ObjectPersistentCacher(ObjectCacher):
     def is_expired(self, key):
         try:
             fname = os.path.join(self.cache_path, key)
-            st_mode, st_ino, st_dev, st_nlink, st_uid, st_gid, st_size, st_atime, st_mtime, st_ctime = os.stat(fname)
+            _, _, _, _, _, _, _, _, st_mtime, _ = os.stat(fname)
             ts = st_mtime
         except OSError:
             return True
